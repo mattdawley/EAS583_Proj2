@@ -23,15 +23,27 @@ contract Destination is AccessControl {
     }
 
 	function wrap(address _underlying_token, address _recipient, uint256 _amount ) public onlyRole(WARDEN_ROLE) {
-		//YOUR CODE HERE
+		address token_address = wrapped_tokens[_underlying_token];
+		require(token_address == _underlying_token, "Mismatched underlying token address");
+		BridgeToken bridgeToken = BridgeToken(_recipient);
+		bridgeToken.mint(msg.sender, _amount);
+		emit Wrap(_underlying_token, token_address, _recipient, _amount);
 	}
 
 	function unwrap(address _wrapped_token, address _recipient, uint256 _amount ) public {
-		//YOUR CODE HERE
+		address underlying_token = underlying_tokens[_wrapped_token];
+		BridgeToken bridgeToken = BridgeToken(_recipient);
+    bridgeToken.burn(_amount);
+    emit Unwrap(underlying_token, _wrapped_token, msg.sender, _recipient, _amount);
 	}
 
 	function createToken(address _underlying_token, string memory name, string memory symbol ) public onlyRole(CREATOR_ROLE) returns(address) {
-		//YOUR CODE HERE
+		BridgeToken newToken = new BridgeToken(_underlying_token, name, symbol, msg.sender);
+		emit Creation(_underlying_token, address(newToken));
+		wrapped_tokens[_underlying_token] = address(newToken);
+		underlying_tokens[address(newToken)] = _underlying_token;
+		tokens.push(address(newToken));
+		return address(newToken);
 	}
 
 }
